@@ -1,5 +1,5 @@
 {
-  "name": "drupal/unique_field",
+  "name": "drupal/unique_field_ajax",
   "type": "drupal-module",
   "description": "The Unique Field module allows administrators to require that content supplied for specified fields is unique.",
   "keywords": ["Drupal"],

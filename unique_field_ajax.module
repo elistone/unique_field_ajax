@@ -6,9 +6,9 @@
  */
 
 use Drupal\Component\Utility\NestedArray;
-use Drupal\field\Entity\FieldConfig;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\field\Entity\FieldConfig;
 
 /**
  * Implements hook_help().
@@ -131,11 +131,11 @@ function unique_field_ajax_field_widget_form_alter(&$element, FormStateInterface
     if ($field_definition->isRequired()) {
       if ($field_definition->getThirdPartySetting('unique_field_ajax', 'unique')) {
         $element['value']['#unique_field_ajax_settings'] = [
-          'per_lang'         => $is_unique_per_lang,
+          'per_lang' => $is_unique_per_lang,
           'field_definition' => $field_definition,
-          'field_name'       => $name,
+          'field_name' => $name,
         ];
-        $element['value']['#element_validate'][] = '_validate_unique';
+        $element['value']['#element_validate'][] = 'unique_field_ajax_validate_unique';
         if ($field_definition->getThirdPartySetting('unique_field_ajax', 'use_ajax')) {
           $element['#process'] = ['_unique_field_ajax_process'];
         }
@@ -182,23 +182,21 @@ function _unique_field_ajax_process($element, FormStateInterface &$form_state, $
   $element['value']['#prefix'] = '<div id="' . $wrapper . '">';
   $element['value']['#suffix'] = '</div>';
 
-  if ($triggering = $form_state->getTriggeringElement()) {
-    $value = $form_state->getValue($field_name);
-    $value = !empty($value) ? $value[0]['value'] : NULL;
+  $value = $form_state->getValue($field_name);
+  $value = !empty($value) ? $value[0]['value'] : NULL;
 
-    $entity = $form_state->getFormObject()->getEntity();
-    $entity_type = $entity->getEntityTypeId();
-    $langcode = ($form_state->getValues()['langcode'][0]['value']) ? $form_state->getValues()['langcode'][0]['value'] : '0';
-    $valid = _is_unique($entity_type, $langcode, $field_name, $value, $entity->bundle(), $element['value']['#unique_field_ajax_settings']['per_lang'], $entity);
-    $message = $field_definition->getThirdPartySetting('unique_field_ajax', 'message');
-    if (empty($message)) {
-      $message = t('This field has to be unique.');
-    }
-    if (!$valid) {
-      $element['value']['#attributes']['class'][] = 'error';
-      $element['value']['#attributes']['aria-invalid'] = 'true';
-      $element['value']['#suffix'] = '<div class="error">' . $message . '</div>' . $element['value']['#suffix'];
-    }
+  $entity = $form_state->getFormObject()->getEntity();
+  $entity_type = $entity->getEntityTypeId();
+  $langcode = ($form_state->getValues()['langcode'][0]['value']) ? $form_state->getValues()['langcode'][0]['value'] : '0';
+  $valid = unique_field_ajax_is_unique($entity_type, $langcode, $field_name, $value, $entity->bundle(), $element['value']['#unique_field_ajax_settings']['per_lang'], $entity);
+  $message = $field_definition->getThirdPartySetting('unique_field_ajax', 'message');
+  if (empty($message)) {
+    $message = t('This field has to be unique.');
+  }
+  if (!$valid) {
+    $element['value']['#attributes']['class'][] = 'error';
+    $element['value']['#attributes']['aria-invalid'] = 'true';
+    $element['value']['#suffix'] = '<div class="error">' . $message . '</div>' . $element['value']['#suffix'];
   }
   return ($element);
 }
@@ -206,7 +204,7 @@ function _unique_field_ajax_process($element, FormStateInterface &$form_state, $
 /**
  * Ajax callback to validate the email field.
  */
-function _validate_unique($element, FormStateInterface $form_state, array $form) {
+function unique_field_ajax_validate_unique($element, FormStateInterface $form_state, array $form) {
   $entity = $form_state->getFormObject()->getEntity();
   $langcode = ($form_state->getValues()['langcode'][0]['value']) ? $form_state->getValues()['langcode'][0]['value'] : '0';
   $field_name = $element['#unique_field_ajax_settings']['field_name'];
@@ -216,7 +214,7 @@ function _validate_unique($element, FormStateInterface $form_state, array $form)
   $entity_type = $entity->getEntityTypeId();
 
   // If field is not unique set error.
-  $valid = _is_unique($entity_type, $langcode, $field_name, $value[0]['value'], $entity->bundle(), $element['#unique_field_ajax_settings']['per_lang'], $entity);
+  $valid = unique_field_ajax_is_unique($entity_type, $langcode, $field_name, $value[0]['value'], $entity->bundle(), $element['#unique_field_ajax_settings']['per_lang'], $entity);
   if (!$valid) {
     $form_state->setErrorByName($field_name, t('The field @field_label has to be unique.', array('@field_label' => $field_label)));
     $form_state->setRebuild();
@@ -235,7 +233,7 @@ function _validate_unique($element, FormStateInterface $form_state, array $form)
  *
  * @return array|int
  */
-function _is_unique($entity_type, $langcode, $field_name, $field_value, $bundle, $is_unique_per_lang, $entity) {
+function unique_field_ajax_is_unique($entity_type, $langcode, $field_name, $field_value, $bundle, $is_unique_per_lang, $entity) {
 
   $entity_type_definition = Drupal::entityTypeManager()
     ->getDefinition($entity_type);
@@ -268,15 +266,4 @@ function _is_unique($entity_type, $langcode, $field_name, $field_value, $bundle,
 
   return TRUE;
 
-}
-
-/**
- * Set error message.
- *
- * @param $form_state
- * @param $field_name
- */
-function _form_unique_error($form_state, $field_name, $field_label) {
-  $form_state->setErrorByName($field_name, t('The field @field_label has to be unique.', array('@field_label' => $field_label)));
-  $form_state->setRebuild();
 }
