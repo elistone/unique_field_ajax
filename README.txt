@@ -1,8 +1,10 @@
 
 ---SUMMARY---
 
-This is a very light-weight module allows field content
+This is a very light-weight module allows fields
 to be unique by bundle and language.
+You can use ajax for check.
+You can customize the error message.
 
 
 ---REQUIREMENTS---
