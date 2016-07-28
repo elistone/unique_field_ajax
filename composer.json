@@ -1,0 +1,14 @@
+{
+  "name": "drupal/unique_field",
+  "type": "drupal-module",
+  "description": "The Unique Field module allows administrators to require that content supplied for specified fields is unique.",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "homepage": "http://drupal.org/project/unique_field",
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "http://drupal.org/project/issues/unique_field",
+    "source": "http://cgit.drupalcode.org/unique_field"
+  },
+  "require": { }
+}

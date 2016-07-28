@@ -1,0 +1,50 @@
+
+---SUMMARY---
+
+This is a very light-weight module allows field content
+to be unique by bundle and language.
+
+
+---REQUIREMENTS---
+
+
+*None. (Other than a clean Drupal 8 installation)
+
+
+---INSTALLATION---
+
+
+Install as usual.
+
+Place the entirety of this directory in the /modules folder of your
+
+Drupal installation.
+
+Navigate to Administer > Extend.
+
+Check the 'Enabled' box next to the 'Custom permissions' and then
+
+click the 'Save Configuration' button at the bottom.
+
+For help regarding installation, visit:
+https://www.drupal.org/documentation/install/modules-themes/modules-8
+
+
+---CONFIGURATION---
+
+Enable the unique case in the field settings form,
+if you want it to b unique by language enable the per_lang case.
+
+
+---CONTACT---
+
+
+Current Maintainers:
+*Utiks - https://www.drupal.org/u/utiks
+
+
+This project has been sponsored by:
+
+*utiks
+
+Visit: http://www.utiks.com for more information.
