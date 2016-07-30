@@ -34,8 +34,14 @@ https://www.drupal.org/documentation/install/modules-themes/modules-8
 
 ---CONFIGURATION---
 
+PS: Only required fields of types
+('string','list_string','text','email','entity_reference','path','uri')
+Can be unique.
+
 Enable the unique case in the field settings form,
-if you want it to b unique by language enable the per_lang case.
+if you want it to be unique by language enable the per_lang case.
+If you want an ajax check please enable the "use ajax case"
+
 
 
 ---CONTACT---
