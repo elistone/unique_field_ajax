@@ -1,5 +1,5 @@
 (function ($, Drupal, drupalSettings) {
-    'use strict'
+  'use strict';
   Drupal.behaviors.unique_field_ajax = {
     attach: function (context, settings) {
       var input_selector = drupalSettings.unique_field_ajax.id;
