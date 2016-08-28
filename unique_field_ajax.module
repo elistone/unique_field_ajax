@@ -49,18 +49,12 @@ function unique_field_ajax_form_field_config_edit_form_alter(&$form, FormStateIn
   ];
   if (!$field->getFieldStorageDefinition()->isMultiple()) {
     if (in_array($field->getType(), $unique_field_ajax_types)) {
-      $form['required']['#description'] = t('Required fields can be unique');
 
       $form['third_party_settings']['unique_field_ajax']['unique'] = array(
         '#type' => 'checkbox',
         '#title' => t("Unique"),
         '#default_value' => $field->getThirdPartySetting('unique_field_ajax', 'unique'),
         '#weight' => -10,
-        '#states' => array(
-          'visible' => array(
-            ':input[name="required"]' => array('checked' => TRUE),
-          ),
-        ),
       );
 
       $form['third_party_settings']['unique_field_ajax']['per_lang'] = array(
@@ -71,8 +65,7 @@ function unique_field_ajax_form_field_config_edit_form_alter(&$form, FormStateIn
         '#weight' => -9,
         '#states' => array(
           'visible' => array(
-            ':input[name="third_party_settings[unique_field_ajax][unique]"]' => array('checked' => TRUE),
-            ':input[name="required"]' => array('checked' => TRUE),
+            ':input[name="third_party_settings[unique_field_ajax][unique]"]' => array('checked' => TRUE)
           ),
         ),
       );
@@ -85,8 +78,7 @@ function unique_field_ajax_form_field_config_edit_form_alter(&$form, FormStateIn
         '#weight' => -8,
         '#states' => array(
           'visible' => array(
-            ':input[name="third_party_settings[unique_field_ajax][unique]"]' => array('checked' => TRUE),
-            ':input[name="required"]' => array('checked' => TRUE),
+            ':input[name="third_party_settings[unique_field_ajax][unique]"]' => array('checked' => TRUE)
           ),
         ),
       );
@@ -99,8 +91,7 @@ function unique_field_ajax_form_field_config_edit_form_alter(&$form, FormStateIn
         '#weight' => -7,
         '#states' => array(
           'visible' => array(
-            ':input[name="third_party_settings[unique_field_ajax][unique]"]' => array('checked' => TRUE),
-            ':input[name="required"]' => array('checked' => TRUE),
+            ':input[name="third_party_settings[unique_field_ajax][unique]"]' => array('checked' => TRUE)
           ),
         ),
       );
@@ -128,19 +119,17 @@ function unique_field_ajax_field_widget_form_alter(&$element, FormStateInterface
     ) {
       $is_unique_per_lang = $field_definition->getThirdPartySetting('unique_field_ajax', 'per_lang');
     }
-    if ($field_definition->isRequired()) {
-      if ($field_definition->getThirdPartySetting('unique_field_ajax', 'unique')) {
-        $element['#attached']['library'][] = 'unique_field_ajax/unique.event';
-        $element['value']['#unique_field_ajax_settings'] = [
-          'per_lang' => $is_unique_per_lang,
-          'field_definition' => $field_definition,
-          'field_name' => $name,
-        ];
+    if ($field_definition->getThirdPartySetting('unique_field_ajax', 'unique')) {
+      $element['#attached']['library'][] = 'unique_field_ajax/unique.event';
+      $element['value']['#unique_field_ajax_settings'] = [
+        'per_lang' => $is_unique_per_lang,
+        'field_definition' => $field_definition,
+        'field_name' => $name,
+      ];
 
-        $element['value']['#element_validate'][] = 'unique_field_ajax_validate_unique';
-        if ($field_definition->getThirdPartySetting('unique_field_ajax', 'use_ajax')) {
-          $element['#process'] = ['_unique_field_ajax_process'];
-        }
+      $element['value']['#element_validate'][] = 'unique_field_ajax_validate_unique';
+      if ($field_definition->getThirdPartySetting('unique_field_ajax', 'use_ajax')) {
+        $element['#process'] = ['_unique_field_ajax_process'];
       }
     }
   }
