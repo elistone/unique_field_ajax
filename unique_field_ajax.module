@@ -130,11 +130,13 @@ function unique_field_ajax_field_widget_form_alter(&$element, FormStateInterface
     }
     if ($field_definition->isRequired()) {
       if ($field_definition->getThirdPartySetting('unique_field_ajax', 'unique')) {
+        $element['#attached']['library'][] = 'unique_field_ajax/unique.event';
         $element['value']['#unique_field_ajax_settings'] = [
           'per_lang' => $is_unique_per_lang,
           'field_definition' => $field_definition,
           'field_name' => $name,
         ];
+
         $element['value']['#element_validate'][] = 'unique_field_ajax_validate_unique';
         if ($field_definition->getThirdPartySetting('unique_field_ajax', 'use_ajax')) {
           $element['#process'] = ['_unique_field_ajax_process'];
@@ -151,6 +153,7 @@ function unique_field_ajax_field_widget_form_alter(&$element, FormStateInterface
  */
 function _unique_field_ajax(array &$form, FormStateInterface $form_state) {
   $element = $form_state->getTriggeringElement();
+
   return NestedArray::getValue(
     $form,
     $element['#array_parents']);
@@ -170,18 +173,23 @@ function _unique_field_ajax_process($element, FormStateInterface &$form_state, $
   $field_definition = $element['value']['#unique_field_ajax_settings']['field_definition'];
   $field_label = $field_definition->label();
   $wrapper = 'unique-' . $field_name;
+
+  $element['#attached']['library'][] = 'unique_field_ajax/unique_event';
+  $settings = array('id' => '#'.$wrapper.' input');
+  $element['#attached']['drupalSettings']['unique_field_ajax'] = $settings;
+
   $element['value']['#ajax'] = [
     'callback' => '_unique_field_ajax',
-    'event' => 'change',
+    'event' => 'finishedinput',
     'wrapper' => $wrapper,
     'progress' => array(
       'type' => 'throbber',
       'message' => t('Verifying @field_label...', array('@field_label' => $field_label)),
-    ),
+    )
   ];
+
   $element['value']['#prefix'] = '<div id="' . $wrapper . '">';
   $element['value']['#suffix'] = '</div>';
-
   $value = $form_state->getValue($field_name);
   $value = !empty($value) ? $value[0]['value'] : NULL;
 
@@ -198,6 +206,7 @@ function _unique_field_ajax_process($element, FormStateInterface &$form_state, $
     $element['value']['#attributes']['aria-invalid'] = 'true';
     $element['value']['#suffix'] = '<div class="error">' . $message . '</div>' . $element['value']['#suffix'];
   }
+
   return ($element);
 }
 
