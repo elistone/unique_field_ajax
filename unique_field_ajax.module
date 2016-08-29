@@ -120,7 +120,7 @@ function unique_field_ajax_field_widget_form_alter(&$element, FormStateInterface
       $is_unique_per_lang = $field_definition->getThirdPartySetting('unique_field_ajax', 'per_lang');
     }
     if ($field_definition->getThirdPartySetting('unique_field_ajax', 'unique')) {
-      $element['#attached']['library'][] = 'unique_field_ajax/unique.event';
+
       $element['value']['#unique_field_ajax_settings'] = [
         'per_lang' => $is_unique_per_lang,
         'field_definition' => $field_definition,
@@ -157,16 +157,16 @@ function _unique_field_ajax(array &$form, FormStateInterface $form_state) {
  *
  * @return mixed
  */
-function _unique_field_ajax_process($element, FormStateInterface &$form_state, $form) {
+function _unique_field_ajax_process($element, FormStateInterface &$form_state, &$form) {
   $field_name = $element['value']['#unique_field_ajax_settings']['field_name'];
   $field_definition = $element['value']['#unique_field_ajax_settings']['field_definition'];
   $field_label = $field_definition->label();
   $wrapper = 'unique-' . $field_name;
-
-  $element['#attached']['library'][] = 'unique_field_ajax/unique_event';
+  if(!empty($form['#attached']['library']) && !in_array('unique_field_ajax/unique_event',$form['#attached']['library'])){
+    $form['#attached']['library'][] = 'unique_field_ajax/unique_event';
+  }
   $settings = array('id' => '#'.$wrapper.' input');
-  $element['#attached']['drupalSettings']['unique_field_ajax'] = $settings;
-
+  $form['#attached']['drupalSettings']['unique_field_ajax'][] = $settings;
   $element['value']['#ajax'] = [
     'callback' => '_unique_field_ajax',
     'event' => 'finishedinput',
@@ -176,7 +176,6 @@ function _unique_field_ajax_process($element, FormStateInterface &$form_state, $
       'message' => t('Verifying @field_label...', array('@field_label' => $field_label)),
     )
   ];
-
   $element['value']['#prefix'] = '<div id="' . $wrapper . '">';
   $element['value']['#suffix'] = '</div>';
   $value = $form_state->getValue($field_name);
@@ -196,7 +195,6 @@ function _unique_field_ajax_process($element, FormStateInterface &$form_state, $
     $element['value']['#attributes']['aria-invalid'] = 'true';
     $element['value']['#suffix'] = '<div class="error">' . $message . '</div>' . $element['value']['#suffix'];
   }
-
   return ($element);
 }
 
