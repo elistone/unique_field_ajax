@@ -2,7 +2,7 @@
   'use strict';
   Drupal.behaviors.unique_field_ajax = {
     attach: function (context, settings) {
-      $.each(drupalSettings.unique_field_ajax, function( index, data ) {
+      $.each(drupalSettings.unique_field_ajax, function (index, data) {
         var input_selector = data.id;
         var typingTimer;
         var doneTypingInterval = 1100;
@@ -15,9 +15,12 @@
             }, doneTypingInterval);
           }
         });
-        var last_tape = $(input_selector).val().length;
+        var last_tape = 0;
+        if ($(input_selector).val) {
+          last_tape = $(input_selector).val().length;
+        }
         if (/chrom(e|ium)/.test(navigator.userAgent.toLowerCase())) {
-          if ($(input_selector).attr('type') != 'email') {
+          if ($(input_selector).attr('type') !== 'email') {
             $(input_selector).focus(function () {
               $(this)[0].setSelectionRange(last_tape, last_tape);
             });
