@@ -1,10 +1,7 @@
 {
     "name": "drupal/unique_field_ajax",
     "type": "drupal-module",
-    "description": "This is a very light-weight module allows
-        fields to be unique by bundle and language.
-        You can use ajax for check.
-        You can customize the error message",
+    "description": "This is a very light-weight module allows fields to be unique by bundle and language. You can use ajax for check. You can customize the error message",
     "keywords": ["Drupal"],
     "license": "GPL-2.0+",
     "homepage": "http://drupal.org/project/unique_field_ajax",
