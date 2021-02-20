@@ -199,7 +199,7 @@ function _unique_field_ajax_process($element, FormStateInterface &$form_state, &
 }
 
 /**
- * Ajax callback to validate the email field.
+ * Element Validate callback to validate a field.
  */
 function unique_field_ajax_validate_unique($element, FormStateInterface $form_state, array $form) {
   $entity = $form_state->getFormObject()->getEntity();
@@ -212,13 +212,17 @@ function unique_field_ajax_validate_unique($element, FormStateInterface $form_st
   $field_name = $element['#unique_field_ajax_settings']['field_name'];
   $field_definition = $element['#unique_field_ajax_settings']['field_definition'];
   $field_label = $field_definition->label();
+  $message = $field_definition->getThirdPartySetting('unique_field_ajax', 'message');
+  if (empty($message)) {
+    $message = t('The field @field_label has to be unique.', ['@field_label' => $field_label]);
+  }
   $value = $form_state->getValue($field_name);
   $entity_type = $entity->getEntityTypeId();
 
   // If field is not unique set error.
   $valid = unique_field_ajax_is_unique($entity_type, $langcode, $field_name, $value[0]['value'], $entity->bundle(), $element['#unique_field_ajax_settings']['per_lang'], $entity);
   if (!$valid) {
-    $form_state->setErrorByName($field_name, t('The field @field_label has to be unique.', array('@field_label' => $field_label)));
+    $form_state->setErrorByName($field_name, $message);
     $form_state->setRebuild();
   }
 }
