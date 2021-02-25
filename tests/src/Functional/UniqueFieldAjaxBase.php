@@ -2,12 +2,9 @@
 
 namespace Drupal\Tests\unique_field_ajax\Functional;
 
-use Drupal\entity_test\Entity\EntityTest;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
-use Drupal\language\Entity\ConfigurableLanguage;
 use Drupal\Tests\BrowserTestBase;
-
 
 /**
  * The base testing class for unique_field_ajax.
@@ -20,9 +17,9 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    * {@inheritdoc}
    */
   protected static $modules = [
+    'node',
     'language',
     'language_test',
-    'entity_test',
     'field_ui',
     'unique_field_ajax',
   ];
@@ -31,6 +28,13 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    * {@inheritdoc}
    */
   protected $defaultTheme = 'stark';
+
+  /**
+   * The default content type.
+   *
+   * @var string
+   */
+  protected $contentType = 'node_unique_field_ajax';
 
   /**
    * A field to use in this test class.
@@ -51,159 +55,227 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    *
    * @var \string[][]
    */
-  protected $fieldTypes = [];
+  protected $fieldTypes = [
+    'string' => [
+      'type' => 'string',
+      'widget' => 'string_textfield',
+      'value' => 'string',
+      'effect' => 'value',
+      'settings' => [],
+    ],
+    'email' => [
+      'type' => 'email',
+      'widget' => 'email_default',
+      'value' => 'email',
+      'effect' => 'value',
+      'settings' => [],
+    ],
+  ];
 
   /**
    * Translation language options.
    *
    * @var string[]
    */
-  protected $translationOptions = [];
+  protected $translationOptions = [
+    'es' => 'name spanish',
+    'fr' => 'name french',
+  ];
 
   /**
    * Perform initial setup tasks that run before every test method.
+   *
+   * @throws \Drupal\Core\Entity\EntityStorageException
    */
-  public function setUp() {
+  protected function setUp() {
     parent::setUp();
     $user = $this->drupalCreateUser([], NULL, TRUE);
     $this->drupalLogin($user);
+    $this->createCustomContentType();
+  }
+
+  /**
+   * Create a new content type using the content type variable.
+   */
+  protected function createCustomContentType() {
+    $this->drupalCreateContentType(['type' => $this->contentType]);
   }
 
   /**
    * Helper method to create a field to use.
    *
-   * @param $fieldType
-   * @param $widgetType
+   * @param string $fieldType
+   *   Type of field.
+   * @param string $widgetType
+   *   Type of field widget.
    * @param array $fieldConfigSettings
+   *   Any extra field config settings.
    *
    * @throws \Drupal\Core\Entity\EntityStorageException
    */
-  protected function _createField($fieldType, $widgetType, $fieldConfigSettings = []) {
-    $fieldName = $this->_createRandomData();
+  protected function createField(string $fieldType, string $widgetType, array $fieldConfigSettings = []) {
+    $field_name = $this->createRandomData();
     $this->fieldStorage = FieldStorageConfig::create([
-      'field_name' => $fieldName,
-      'entity_type' => 'entity_test',
+      'field_name' => $field_name,
+      'entity_type' => 'node',
       'type' => $fieldType,
     ]);
     $this->fieldStorage->save();
 
-    $fieldConfig = [
+    $field_config = [
       'field_storage' => $this->fieldStorage,
-      'bundle' => 'entity_test',
-      'label' => $fieldName . '_label',
+      'bundle' => $this->contentType,
+      'label' => $field_name . '_label',
     ];
     if (!empty($fieldConfigSettings)) {
-      $fieldConfig['settings'] = $fieldConfigSettings;
+      $field_config['settings'] = $fieldConfigSettings;
     }
-    $this->field = FieldConfig::create($fieldConfig);
+    $this->field = FieldConfig::create($field_config);
     $this->field->save();
 
-    /** @var \Drupal\Core\Entity\EntityDisplayRepositoryInterface $displayRepository */
-    $displayRepository = \Drupal::service('entity_display.repository');
+    /** @var \Drupal\Core\Entity\EntityDisplayRepositoryInterface $display_repository */
+    $display_repository = \Drupal::service('entity_display.repository');
 
-    $displayRepository->getFormDisplay('entity_test', 'entity_test')
-      ->setComponent($fieldName, [
+    $display_repository->getFormDisplay('node', $this->contentType)
+      ->setComponent($field_name, [
         'type' => $widgetType,
       ])
       ->save();
-    $displayRepository->getViewDisplay('entity_test', 'entity_test', 'full')
-      ->setComponent($fieldName)
+    $display_repository->getViewDisplay('node', $this->contentType, 'full')
+      ->setComponent($field_name)
       ->save();
   }
 
   /**
    * Runs a test to see if a field can be saved.
    *
-   * @param $edit
+   * @param array $edit
+   *   Edit data.
    * @param bool $nid
-   * @param null $language
+   *   Node id.
+   * @param string $language
+   *   Language.
    *
-   * @return mixed
+   * @return int
+   *   Saved/updated node id.
    */
-  protected function _canSaveField($edit, $nid = FALSE, $language = NULL) {
-    $method = $this->_getSaveMethod($nid, $language);
+  protected function canSaveField(array $edit, $nid = FALSE, $language = NULL): int {
+    $title = $this->randomString();
+    $edit['title[0][value]'] = $title;
+    $edit['body[0][value]'] = $this->randomString();
+    $method = $this->getSaveMethod($nid, $language);
     $this->drupalPostForm($method, $edit, t('Save'));
 
-    preg_match('|entity_test/manage/(\d+)|', $this->getUrl(), $match);
+    preg_match('|node/(\d+)|', $this->getUrl(), $match);
 
     if (!empty($match)) {
       $id = $match[1];
-      $msg = !$nid ? 'entity_test @id has been created.' : 'entity_test @id has been updated.';
-      $this->assertText(t($msg, ['@id' => $id]));
-      return $id;
+      if (!$nid) {
+        $this->assertText(t('@contentType @title has been created.',
+          ['@title' => $title, '@contentType' => $this->contentType])
+        );
+      }
+      else {
+        $this->assertText(t('@contentType @title has been updated.',
+            ['@title' => $title, '@contentType' => $this->contentType])
+              );
+      }
+      return (int) $id;
     }
     else {
       var_dump($this->getUrl());
-      var_dump($this->getSession()->getPage()->getHTML());
-      $this->fail(t('Could not extract entity id from url'));
+      var_dump($this->getSession()->getPage()->getHtml());
+      static::fail(t('Could not extract entity id from url'));
     }
+    return -1;
   }
 
   /**
-   * An Alias method for save field, requiring an nid;
+   * An Alias method for save field, requiring an nid.
    *
-   * @param $edit
-   * @param $nid
-   * @param null $language
+   * @param array $edit
+   *   Edit data.
+   * @param string $nid
+   *   Node id.
+   * @param string $language
+   *   Language.
    *
-   * @return mixed
+   * @return int
+   *   Saved/updated node id.
    */
-  protected function _canUpdateField($edit, $nid, $language = NULL) {
-    return $this->_canSaveField($edit, $nid, $language);
+  protected function canUpdateField(array $edit, string $nid, $language = NULL): int {
+    return $this->canSaveField($edit, $nid, $language);
   }
 
   /**
    * Runs a test to see if a field cannot be saved.
    *
-   * @param $edit
-   * @param null $customMsg
-   * @param null $nid
-   * @param null $language
+   * @param array $edit
+   *   Edit data.
+   * @param string $customMsg
+   *   Custom save message.
+   * @param string $nid
+   *   Node id.
+   * @param string $language
+   *   Language.
    */
-  protected function _cannotSaveField($edit, $customMsg = NULL, $nid = NULL, $language = NULL) {
-    $method = $this->_getSaveMethod($nid, $language);
+  protected function cannotSaveField(array $edit, $customMsg = NULL, $nid = NULL, $language = NULL) {
+    $method = $this->getSaveMethod($nid, $language);
     $label_name = $this->field->label();
 
     $this->drupalPostForm($method, $edit, t('Save'));
-
-    $msg = $customMsg ? t($customMsg) : t('The field @field has to be unique.', ['@field' => $label_name]);
-    $this->assertText($msg);
+    if ($customMsg) {
+      $message = $customMsg;
+    }
+    else {
+      $message = t('The field @field has to be unique.', ['@field' => $label_name]);
+    }
+    $this->assertText($message);
   }
 
   /**
-   * An Alias method for cannot updating field, requiring an nid;
+   * An Alias method for cannot updating field, requiring an nid.
    *
-   * @param $edit
-   * @param $nid
-   * @param null $language
-   * @param null $customMsg
+   * @param array $edit
+   *   Edit data.
+   * @param string $nid
+   *   Node id.
+   * @param string $language
+   *   Language.
+   * @param string $customMsg
+   *   Custom save message.
    */
-  protected function _cannotEditField($edit, $nid, $language = NULL, $customMsg = NULL) {
-    $this->_cannotSaveField($edit, $customMsg, $nid, $language);
+  protected function cannotEditField(array $edit, string $nid, $language = NULL, $customMsg = NULL) {
+    $this->cannotSaveField($edit, $customMsg, $nid, $language);
   }
 
   /**
    * Helper method to return the saving method of add or edit.
    *
-   * @param $id
-   * @param $language
+   * @param string|null $id
+   *   Node id.
+   * @param string|null $language
+   *   Node language.
    *
    * @return string
+   *   Method path.
    */
-  protected function _getSaveMethod($id, $language) {
-    $path = !$id ? 'entity_test/add' : 'entity_test/manage/' . $id . '/edit';
+  protected function getSaveMethod(string $id = NULL, string $language = NULL): string {
+    $path = !$id ? 'node/add/' . $this->contentType : 'node/' . $id . '/edit';
     return $language ? $language . '/' . $path : $path;
   }
 
   /**
    * Helper method to update third part field settings.
    *
-   * @param $key
-   * @param $value
+   * @param string $key
+   *   Third Party key.
+   * @param string $value
+   *   Third Party value.
    *
    * @throws \Drupal\Core\Entity\EntityStorageException
    */
-  protected function _updateThirdPartySetting($key, $value) {
+  protected function updateThirdPartySetting(string $key, string $value) {
     $this->field->setThirdPartySetting('unique_field_ajax', $key, $value);
     $this->field->save();
   }
@@ -211,38 +283,51 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
   /**
    * Helper method to create update edit data.
    *
-   * @param $fieldName
-   * @param $value
-   * @param $effect
+   * @param string $fieldName
+   *   Field name.
+   * @param string $value
+   *   Field value.
+   * @param string $effect
+   *   Type of field.
    *
    * @return string[]
+   *   Edit data formatted for submit.
    */
-  protected function _createUpdateData($fieldName, $value, $effect) {
-    return ["{$fieldName}[0][{$effect}]" => $this->_createRandomData($value)];;
+  protected function createUpdateData(string $fieldName, string $value, string $effect): array {
+    return ["{$fieldName}[0][{$effect}]" => $this->createRandomData($value)];
   }
 
   /**
    * Helper method to create random data.
    *
    * @param string $type
+   *   Type of random data.
+   *
+   * @return false|string|string[]
+   *   Random data.
    */
-  protected function _createRandomData($type = 'string') {
+  protected function createRandomData($type = 'string') {
     $return = '';
 
     switch ($type) {
       case 'string':
         $return = mb_strtolower($this->randomMachineName());
         break;
+
       case 'sentence':
         $length = 200;
-        $return = substr(str_shuffle(str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil($length / strlen($x)))), 1, $length);
+        $chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $return = substr(str_shuffle(str_repeat($chars,
+          ceil($length / strlen($chars)))), 1, $length);
         $return = wordwrap($return, rand(3, 10), ' ', TRUE);
         break;
+
       case 'link':
-        $return = 'http://www.' . $this->_createRandomData() . '.com/';
+        $return = 'http://www.' . $this->createRandomData() . '.com/';
         break;
+
       case 'email':
-        $return = $this->_createRandomData() . '@' . $this->_createRandomData() . '.com';
+        $return = $this->createRandomData() . '@' . $this->createRandomData() . '.com';
         break;
     }
 
