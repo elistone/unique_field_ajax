@@ -78,8 +78,9 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    * @var string[]
    */
   protected $translationOptions = [
-    'es' => 'name spanish',
-    'fr' => 'name french',
+    'es' => 'spanish',
+    'fr' => 'french',
+    'de' => 'german',
   ];
 
   /**
@@ -153,17 +154,13 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    *   Edit data.
    * @param bool $nid
    *   Node id.
-   * @param string $language
-   *   Language.
    *
    * @return int
    *   Saved/updated node id.
    */
-  protected function canSaveField(array $edit, $nid = FALSE, $language = NULL): int {
-    $title = $this->randomString();
-    $edit['title[0][value]'] = $title;
-    $edit['body[0][value]'] = $this->randomString();
-    $method = $this->getSaveMethod($nid, $language);
+  protected function canSaveField(array $edit, $nid = FALSE): int {
+    $title = $edit['title[0][value]'];
+    $method = $this->getSaveMethod($nid);
     $this->drupalPostForm($method, $edit, t('Save'));
 
     preg_match('|node/(\d+)|', $this->getUrl(), $match);
@@ -197,14 +194,12 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    *   Edit data.
    * @param string $nid
    *   Node id.
-   * @param string $language
-   *   Language.
    *
    * @return int
    *   Saved/updated node id.
    */
-  protected function canUpdateField(array $edit, string $nid, $language = NULL): int {
-    return $this->canSaveField($edit, $nid, $language);
+  protected function canUpdateField(array $edit, string $nid): int {
+    return $this->canSaveField($edit, $nid);
   }
 
   /**
@@ -216,11 +211,9 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    *   Custom save message.
    * @param string $nid
    *   Node id.
-   * @param string $language
-   *   Language.
    */
-  protected function cannotSaveField(array $edit, $customMsg = NULL, $nid = NULL, $language = NULL) {
-    $method = $this->getSaveMethod($nid, $language);
+  protected function cannotSaveField(array $edit, $customMsg = NULL, $nid = NULL) {
+    $method = $this->getSaveMethod($nid);
     $label_name = $this->field->label();
 
     $this->drupalPostForm($method, $edit, t('Save'));
@@ -240,13 +233,11 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    *   Edit data.
    * @param string $nid
    *   Node id.
-   * @param string $language
-   *   Language.
    * @param string $customMsg
    *   Custom save message.
    */
-  protected function cannotEditField(array $edit, string $nid, $language = NULL, $customMsg = NULL) {
-    $this->cannotSaveField($edit, $customMsg, $nid, $language);
+  protected function cannotEditField(array $edit, string $nid, $customMsg = NULL) {
+    $this->cannotSaveField($edit, $customMsg, $nid);
   }
 
   /**
@@ -254,15 +245,12 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    *
    * @param string|null $id
    *   Node id.
-   * @param string|null $language
-   *   Node language.
    *
    * @return string
    *   Method path.
    */
-  protected function getSaveMethod(string $id = NULL, string $language = NULL): string {
-    $path = !$id ? 'node/add/' . $this->contentType : 'node/' . $id . '/edit';
-    return $language ? $language . '/' . $path : $path;
+  protected function getSaveMethod(string $id = NULL): string {
+    return !$id ? 'node/add/' . $this->contentType : 'node/' . $id . '/edit';
   }
 
   /**
@@ -289,12 +277,21 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    *   Field value.
    * @param string $effect
    *   Type of field.
+   * @param string|null $language
+   *   Optional language settings.
    *
    * @return string[]
    *   Edit data formatted for submit.
    */
-  protected function createUpdateData(string $fieldName, string $value, string $effect): array {
-    return ["{$fieldName}[0][{$effect}]" => $this->createRandomData($value)];
+  protected function createUpdateData(string $fieldName, string $value, string $effect, string $language = NULL): array {
+    $return = [];
+    $return['title[0][value]'] = $this->randomString();
+    $return['body[0][value]'] = $this->randomString();
+    $return["{$fieldName}[0][{$effect}]"] = $this->createRandomData($value);
+    if ($language) {
+      $return['langcode[0][value]'] = $language;
+    }
+    return $return;
   }
 
   /**
