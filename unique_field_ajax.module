@@ -156,9 +156,7 @@ function _unique_field_ajax_process($element, FormStateInterface &$form_state, &
   $field_definition = $element['value']['#unique_field_ajax_settings']['field_definition'];
   $field_label = $field_definition->label();
   $wrapper = 'unique-' . $field_name;
-  if(!empty($form['#attached']['library']) && !in_array('unique_field_ajax/unique_event',$form['#attached']['library'])){
-    $form['#attached']['library'][] = 'unique_field_ajax/unique_event';
-  }
+  $form['#attached']['library'][] = 'unique_field_ajax/unique_event';
   $settings = array('id' => '#'.$wrapper.' input');
   $form['#attached']['drupalSettings']['unique_field_ajax'][] = $settings;
   $element['value']['#ajax'] = [
