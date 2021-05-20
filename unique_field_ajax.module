@@ -78,10 +78,13 @@ function unique_field_ajax_form_field_config_edit_form_alter(&$form, FormStateIn
         ),
       );
 
+      $description = t("The message to show under the field when the value is not unique. The following tokens that can be used:");
+      $description .= "<br/>" . t("The placeholder <em>%link</em> can be used to display a link to the entity already having the value.");
+      $description .= "<br/>" . t("The placeholder <em>%label</em> can be used to display the field label.");
       $form['third_party_settings']['unique_field_ajax']['message'] = array(
         '#type' => 'textarea',
         '#title' => t("Error message"),
-        '#description' => t("The message to show under the field when the value is not unique. The placeholder <em>%link</em> can be used to display a link to the entity already having the value."),
+        '#description' => $description,
         '#default_value' => $field->getThirdPartySetting('unique_field_ajax', 'message'),
         '#weight' => -7,
         '#states' => array(
@@ -177,43 +180,72 @@ function _unique_field_ajax_process($element, FormStateInterface &$form_state, &
   $entity = $form_state->getFormObject()->getEntity();
   $entity_type = $entity->getEntityTypeId();
   $langcode = (!empty($form_state->getValues()['langcode'][0]['value'])) ?
-    $form_state->getValues()['langcode'][0]['value'] : '0';
+  $form_state->getValues()['langcode'][0]['value'] : '0';
   $valid = unique_field_ajax_is_unique($entity_type, $langcode, $field_name, $value, $entity->bundle(), $element['value']['#unique_field_ajax_settings']['per_lang'], $entity);
-  $message = $field_definition->getThirdPartySetting('unique_field_ajax', 'message');
-  if (empty($message)) {
-    $message = t('This field has to be unique.');
-  }
+  $message = unique_field_ajax_custom_message($entity, $element, $valid, TRUE);
 
   if ($valid !==  TRUE) {
-    if (strpos($message, '%link') !== FALSE) {
-      $replacement = '<em>' . t('Unknown') . '</em>';
-
-      $entity_with_value = \Drupal::entityTypeManager()
-        ->getStorage($entity->getEntityTypeId())
-        ->load($valid);
-
-      if ($entity_with_value && $entity_with_value->access('view')) {
-        $link = $entity_with_value->toLink(NULL, 'canonical', [
-          'attributes' => [
-            '_target' => 'blank',
-          ],
-        ]);
-        $replacement = $link->toString();
-        $link
-          ->getUrl()
-          ->toString(TRUE)
-          ->applyTo($element);
-        CacheableMetadata::createFromObject($entity_with_value)->applyTo($element);
-      }
-
-      $message = str_replace('%link', $replacement, $message);
-    }
-
     $element['value']['#attributes']['class'][] = 'error';
     $element['value']['#attributes']['aria-invalid'] = 'true';
     $element['value']['#suffix'] = '<div class="error">' . $message . '</div>' . $element['value']['#suffix'];
   }
   return ($element);
+}
+
+/**
+ * Creates the default or custom message.
+ *
+ * @param $entity
+ * @param $element
+ * @param $valid
+ * @param $isAjax
+ *
+ * @return \Drupal\Component\Render\MarkupInterface|string
+ * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+ * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+ * @throws \Drupal\Core\Entity\EntityMalformedException
+ */
+function unique_field_ajax_custom_message($entity, $element, $valid, $isAjax) {
+  $field_definition = $isAjax ? $element['value']['#unique_field_ajax_settings']['field_definition'] : $element['#unique_field_ajax_settings']['field_definition'];
+  $field_label = $field_definition->label();
+  $message = $field_definition->getThirdPartySetting('unique_field_ajax', 'message');
+
+  // default message if nothing set.
+  if (empty($message)) {
+    $message = t('The field "@field_label" has to be unique.', ['@field_label' => $field_label]);
+  }
+
+  // if message contains the string %link look up the matching entities.
+  if (strpos($message, '%link') !== FALSE) {
+    $replacement = '<em>' . t('Unknown entity') . '</em>';
+
+    $entity_with_value = \Drupal::entityTypeManager()
+      ->getStorage($entity->getEntityTypeId())
+      ->load($valid);
+
+    if ($entity_with_value && $entity_with_value->access('view')) {
+      $link = $entity_with_value->toLink(NULL, 'canonical', [
+        'attributes' => [
+          '_target' => 'blank',
+        ],
+      ]);
+      $replacement = $link->toString();
+      $link
+        ->getUrl()
+        ->toString(TRUE)
+        ->applyTo($element);
+      CacheableMetadata::createFromObject($entity_with_value)->applyTo($element);
+    }
+
+    $message = str_replace('%link', $replacement, $message);
+  }
+
+  // replace %label with the field label.
+  if (strpos($message, '%label') !== FALSE) {
+    $message = str_replace('%label', $field_label, $message);
+  }
+
+  return \Drupal\Core\Render\Markup::create($message);
 }
 
 /**
@@ -228,17 +260,13 @@ function unique_field_ajax_validate_unique($element, FormStateInterface $form_st
       $form_state->getValues()['langcode'][0]['value'] : '0';
 
   $field_name = $element['#unique_field_ajax_settings']['field_name'];
-  $field_definition = $element['#unique_field_ajax_settings']['field_definition'];
-  $field_label = $field_definition->label();
-  $message = $field_definition->getThirdPartySetting('unique_field_ajax', 'message');
-  if (empty($message)) {
-    $message = t('The field @field_label has to be unique.', ['@field_label' => $field_label]);
-  }
   $value = $form_state->getValue($field_name);
   $entity_type = $entity->getEntityTypeId();
 
   // If field is not unique set error.
   $valid = unique_field_ajax_is_unique($entity_type, $langcode, $field_name, $value[0]['value'], $entity->bundle(), $element['#unique_field_ajax_settings']['per_lang'], $entity);
+  $message = unique_field_ajax_custom_message($entity, $element, $valid, FALSE);
+
   if ($valid !== TRUE) {
     $form_state->setErrorByName($field_name, $message);
     $form_state->setRebuild();
