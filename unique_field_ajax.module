@@ -9,6 +9,7 @@ use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\field\Entity\FieldConfig;
+use Drupal\Core\Cache\CacheableMetadata;
 
 /**
  * Implements hook_help().
@@ -80,7 +81,7 @@ function unique_field_ajax_form_field_config_edit_form_alter(&$form, FormStateIn
       $form['third_party_settings']['unique_field_ajax']['message'] = array(
         '#type' => 'textarea',
         '#title' => t("Error message"),
-        '#description' => t("The message to show under the field when the value is not unique"),
+        '#description' => t("The message to show under the field when the value is not unique. The placeholder <em>%link</em> can be used to display a link to the entity already having the value."),
         '#default_value' => $field->getThirdPartySetting('unique_field_ajax', 'message'),
         '#weight' => -7,
         '#states' => array(
@@ -182,7 +183,32 @@ function _unique_field_ajax_process($element, FormStateInterface &$form_state, &
   if (empty($message)) {
     $message = t('This field has to be unique.');
   }
-  if (!$valid) {
+
+  if ($valid !==  TRUE) {
+    if (strpos($message, '%link') !== FALSE) {
+      $replacement = '<em>' . t('Unknown') . '</em>';
+
+      $entity_with_value = \Drupal::entityTypeManager()
+        ->getStorage($entity->getEntityTypeId())
+        ->load($valid);
+
+      if ($entity_with_value && $entity_with_value->access('view')) {
+        $link = $entity_with_value->toLink(NULL, 'canonical', [
+          'attributes' => [
+            '_target' => 'blank',
+          ],
+        ]);
+        $replacement = $link->toString();
+        $link
+          ->getUrl()
+          ->toString(TRUE)
+          ->applyTo($element);
+        CacheableMetadata::createFromObject($entity_with_value)->applyTo($element);
+      }
+
+      $message = str_replace('%link', $replacement, $message);
+    }
+
     $element['value']['#attributes']['class'][] = 'error';
     $element['value']['#attributes']['aria-invalid'] = 'true';
     $element['value']['#suffix'] = '<div class="error">' . $message . '</div>' . $element['value']['#suffix'];
@@ -213,7 +239,7 @@ function unique_field_ajax_validate_unique($element, FormStateInterface $form_st
 
   // If field is not unique set error.
   $valid = unique_field_ajax_is_unique($entity_type, $langcode, $field_name, $value[0]['value'], $entity->bundle(), $element['#unique_field_ajax_settings']['per_lang'], $entity);
-  if (!$valid) {
+  if ($valid !== TRUE) {
     $form_state->setErrorByName($field_name, $message);
     $form_state->setRebuild();
   }
@@ -229,7 +255,9 @@ function unique_field_ajax_validate_unique($element, FormStateInterface $form_st
  * @param $bundle
  * @param $is_unique_per_lang
  *
- * @return array|int
+ * @return bool|string
+ *   Boolean TRUE if the value is unique. In any other case, the entity ID of
+ *   the entity that has the same value.
  */
 function unique_field_ajax_is_unique($entity_type, $langcode, $field_name, $field_value, $bundle, $is_unique_per_lang, $entity) {
 
@@ -237,7 +265,12 @@ function unique_field_ajax_is_unique($entity_type, $langcode, $field_name, $fiel
     ->getDefinition($entity_type);
 
   $query = Drupal::entityQuery($entity_type)
+    ->range(0, 1)
     ->condition($field_name, $field_value, '=');
+
+  if (!$entity->isNew()) {
+    $query->condition($entity_type_definition->getKey('id'), $entity->id(), '<>');
+  }
 
   // Test if the entity has a bundle.
   if (!empty($entity_type_definition->getKey('bundle'))) {
@@ -252,14 +285,7 @@ function unique_field_ajax_is_unique($entity_type, $langcode, $field_name, $fiel
   $entities = $query->execute();
 
   if (!empty($entities)) {
-    if ($id = $entity->id()) {
-      if (!in_array($id, $entities)) {
-        return FALSE;
-      }
-    }
-    else {
-      return FALSE;
-    }
+    return array_shift($entities);
   }
 
   return TRUE;
