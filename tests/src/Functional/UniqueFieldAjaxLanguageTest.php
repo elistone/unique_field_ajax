@@ -94,11 +94,8 @@ class UniqueFieldAjaxLanguageTest extends UniqueFieldAjaxBase {
    *
    * @param array $array
    *   Array to shuffle.
-   *
-   * @return bool
-   *   When complete
    */
-  private function shuffleAssoc(array &$array): bool {
+  private function shuffleAssoc(array &$array): void {
     $new = [];
     $keys = array_keys($array);
 
@@ -109,8 +106,6 @@ class UniqueFieldAjaxLanguageTest extends UniqueFieldAjaxBase {
     }
 
     $array = $new;
-
-    return TRUE;
   }
 
 }

@@ -16,7 +16,7 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected static $modules = [
+  protected static array $modules = [
     'node',
     'language',
     'language_test',
@@ -27,35 +27,35 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected $defaultTheme = 'stark';
+  protected string $defaultTheme = 'stark';
 
   /**
    * The default content type.
    *
    * @var string
    */
-  protected $contentType = 'node_unique_field_ajax';
+  protected string $contentType = 'node_unique_field_ajax';
 
   /**
    * A field to use in this test class.
    *
    * @var \Drupal\field\Entity\FieldStorageConfig
    */
-  protected $fieldStorage;
+  protected FieldStorageConfig $fieldStorage;
 
   /**
    * The instance used in this test class.
    *
    * @var \Drupal\field\Entity\FieldConfig
    */
-  protected $field;
+  protected FieldConfig $field;
 
   /**
    * The field types to test upon.
    *
    * @var \string[][]
    */
-  protected $fieldTypes = [
+  protected array $fieldTypes = [
     'string' => [
       'type' => 'string',
       'widget' => 'string_textfield',
@@ -77,7 +77,7 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    *
    * @var string[]
    */
-  protected $translationOptions = [
+  protected array $translationOptions = [
     'es' => 'spanish',
     'fr' => 'french',
     'de' => 'german',
@@ -207,12 +207,12 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    *
    * @param array $edit
    *   Edit data.
-   * @param string $customMsg
+   * @param string|null $customMsg
    *   Custom save message.
-   * @param string $nid
+   * @param string|null $nid
    *   Node id.
    */
-  protected function cannotSaveField(array $edit, $customMsg = NULL, $nid = NULL) {
+  protected function cannotSaveField(array $edit, string $customMsg = NULL, string $nid = NULL) {
     $method = $this->getSaveMethod($nid);
     $label_name = $this->field->label();
 
@@ -221,7 +221,7 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
       $message = $customMsg;
     }
     else {
-      $message = t('The field @field has to be unique.', ['@field' => $label_name]);
+      $message = t('The field "@field" has to be unique.', ['@field' => $label_name]);
     }
     $this->assertText($message);
   }
@@ -233,10 +233,10 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    *   Edit data.
    * @param string $nid
    *   Node id.
-   * @param string $customMsg
+   * @param string|null $customMsg
    *   Custom save message.
    */
-  protected function cannotEditField(array $edit, string $nid, $customMsg = NULL) {
+  protected function cannotEditField(array $edit, string $nid, string $customMsg = NULL) {
     $this->cannotSaveField($edit, $customMsg, $nid);
   }
 
@@ -303,7 +303,7 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    * @return false|string|string[]
    *   Random data.
    */
-  protected function createRandomData($type = 'string') {
+  protected function createRandomData(string $type = 'string') {
     $return = '';
 
     switch ($type) {
@@ -320,7 +320,7 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
         break;
 
       case 'link':
-        $return = 'http://www.' . $this->createRandomData() . '.com/';
+        $return = 'https://www.' . $this->createRandomData() . '.com/';
         break;
 
       case 'email':
