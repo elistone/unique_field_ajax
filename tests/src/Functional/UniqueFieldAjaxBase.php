@@ -16,7 +16,7 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected static array $modules = [
+  protected static $modules = [
     'node',
     'language',
     'language_test',
@@ -27,35 +27,35 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected string $defaultTheme = 'stark';
+  protected $defaultTheme = 'stark';
 
   /**
    * The default content type.
    *
    * @var string
    */
-  protected string $contentType = 'node_unique_field_ajax';
+  protected $contentType = 'node_unique_field_ajax';
 
   /**
    * A field to use in this test class.
    *
    * @var \Drupal\field\Entity\FieldStorageConfig
    */
-  protected FieldStorageConfig $fieldStorage;
+  protected $fieldStorage;
 
   /**
    * The instance used in this test class.
    *
    * @var \Drupal\field\Entity\FieldConfig
    */
-  protected FieldConfig $field;
+  protected $field;
 
   /**
    * The field types to test upon.
    *
    * @var \string[][]
    */
-  protected array $fieldTypes = [
+  protected $fieldTypes = [
     'string' => [
       'type' => 'string',
       'widget' => 'string_textfield',
@@ -77,7 +77,7 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    *
    * @var string[]
    */
-  protected array $translationOptions = [
+  protected $translationOptions = [
     'es' => 'spanish',
     'fr' => 'french',
     'de' => 'german',
@@ -158,7 +158,7 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    * @return int
    *   Saved/updated node id.
    */
-  protected function canSaveField(array $edit, $nid = FALSE): int {
+  protected function canSaveField(array $edit, bool $nid = FALSE): int {
     $title = $edit['title[0][value]'];
     $method = $this->getSaveMethod($nid);
     $this->drupalPostForm($method, $edit, t('Save'));
