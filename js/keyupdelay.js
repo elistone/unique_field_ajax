@@ -5,8 +5,8 @@
       $.each(drupalSettings.unique_field_ajax, function (index, data) {
         var input_selector = data.id;
         var typingTimer;
-        var doneTypingInterval = 1100;
-        $(input_selector).on('keyup', function (e) {
+        var doneTypingInterval = 0;
+        $(input_selector).on('change', function (e) {
           clearTimeout(typingTimer);
           if ($(this).val) {
             var trigid = $(this);
