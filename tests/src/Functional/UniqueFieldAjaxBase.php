@@ -16,7 +16,7 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected static $modules = [
+  protected static array $modules = [
     'node',
     'language',
     'language_test',
@@ -27,35 +27,35 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected $defaultTheme = 'stark';
+  protected string $defaultTheme = 'stark';
 
   /**
    * The default content type.
    *
    * @var string
    */
-  protected $contentType = 'node_unique_field_ajax';
+  protected string $contentType = 'node_unique_field_ajax';
 
   /**
    * A field to use in this test class.
    *
    * @var \Drupal\field\Entity\FieldStorageConfig
    */
-  protected $fieldStorage;
+  protected FieldStorageConfig $fieldStorage;
 
   /**
    * The instance used in this test class.
    *
    * @var \Drupal\field\Entity\FieldConfig
    */
-  protected $field;
+  protected FieldConfig $field;
 
   /**
    * The field types to test upon.
    *
    * @var \string[][]
    */
-  protected $fieldTypes = [
+  protected array $fieldTypes = [
     'string' => [
       'type' => 'string',
       'widget' => 'string_textfield',
@@ -77,7 +77,7 @@ class UniqueFieldAjaxBase extends BrowserTestBase {
    *
    * @var string[]
    */
-  protected $translationOptions = [
+  protected array $translationOptions = [
     'es' => 'spanish',
     'fr' => 'french',
     'de' => 'german',

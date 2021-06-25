@@ -229,6 +229,7 @@ function unique_field_ajax_custom_message($entity, $element, $valid, $property, 
   $field_definition = $isAjax ? $element[$property]['#unique_field_ajax_settings']['field_definition'] : $element['#unique_field_ajax_settings']['field_definition'];
   $field_label = $field_definition->label();
   $message = $field_definition->getThirdPartySetting('unique_field_ajax', 'message');
+  $valid = $valid === TRUE || $valid === "1" ? "1" : "0";
 
   // default message if nothing set.
   if (empty($message)) {
