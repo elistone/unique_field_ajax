@@ -19,8 +19,7 @@ function unique_field_ajax_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
     // Main module help for the unique_field_ajax module.
     case 'help.page.unique_field_ajax':
-      $output = '';
-      $output .= '<h3>' . t('About') . '</h3>';
+      $output = '<h3>' . t('About') . '</h3>';
       $output .= '<p>' . t('The Unique Field module allows administrators to require that content supplied for specified fields is unique.') . '</p>';
       return $output;
 
@@ -46,6 +45,14 @@ function unique_field_ajax_form_field_config_edit_form_alter(&$form, FormStateIn
   ];
   if (!$field->getFieldStorageDefinition()->isMultiple()) {
     if (in_array($field->getType(), $unique_field_ajax_types)) {
+
+      $form['third_party_settings']['unique_field_ajax'] = array(
+        '#type' => 'details',
+        '#group' => 'additional_settings',
+        '#title' => t('Unique title settings'),
+        '#open' => TRUE,
+        '#tree' => TRUE,
+      );
 
       $form['third_party_settings']['unique_field_ajax']['unique'] = array(
         '#type' => 'checkbox',
@@ -80,8 +87,8 @@ function unique_field_ajax_form_field_config_edit_form_alter(&$form, FormStateIn
         ),
       );
 
-      $description = t("The message to show under the field when the value is not unique. The following tokens that can be used:");
-      $description .= "<br/>" . t("The placeholder <em>%link</em> can be used to display a link to the entity already having the value.");
+      $description = t("The message when the value is not unique. The following tokens that can be used:");
+      $description .= "<br/>" . t("The placeholder <em>%link</em> can be used to display a link to the entity matching the unique value.");
       $description .= "<br/>" . t("The placeholder <em>%label</em> can be used to display the field label.");
       $form['third_party_settings']['unique_field_ajax']['message'] = array(
         '#type' => 'textarea',
